@@ -5,16 +5,18 @@ using UnityEngine;
 
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
+
 public class SamMok : MonoBehaviour
 {
     enum State
-    { 
+    {
         Start = 0,
         Game,
         End,
     };
 
-    enum Turn 
+    enum Turn
     {
         I = 0,
         You,
@@ -36,10 +38,10 @@ public class SamMok : MonoBehaviour
 
     private bool win = false;
     private bool lose = false;
-    
+
     public GameObject[] player;
 
-    int[] board = new int[361]; 
+    int[] board = new int[361];
 
     State state; //게임의 현재 상태
     Stone stoneTurn; //현재 턴
@@ -53,7 +55,7 @@ public class SamMok : MonoBehaviour
 
         state = State.Start; //게임의 상태를 Start로 설정
 
-        for(int i = 0; i<board.Length; ++i)
+        for (int i = 0; i < board.Length; ++i)
         {
             board[i] = (int)Stone.None; //배열의 모든 요소를 Stone.None 정수 값으로 초기화
         }
@@ -179,7 +181,7 @@ public class SamMok : MonoBehaviour
     {
         bool bSet = false;
 
-        if(stoneTurn == stoneI)
+        if (stoneTurn == stoneI)
         {
             bSet = MyTurn();
         }
@@ -195,7 +197,7 @@ public class SamMok : MonoBehaviour
 
         stoneWinner = CheckBoard();
 
-        if(stoneWinner != Stone.None)
+        if (stoneWinner != Stone.None)
         {
             state = State.End;
             UpdateEnd();
@@ -207,7 +209,7 @@ public class SamMok : MonoBehaviour
 
     void UpdateEnd() //애니메이션 구현 및 Restart 버튼 활성화
     {
-        if(stoneWinner == stoneI)
+        if (stoneWinner == stoneI)
         {
             win = true;
             lose = false;
@@ -218,7 +220,7 @@ public class SamMok : MonoBehaviour
             tcp.Send(data, data.Length);
         }
 
-        else if(stoneWinner == stoneYou)
+        else if (stoneWinner == stoneYou)
         {
             win = false;
             lose = true;
@@ -294,7 +296,7 @@ public class SamMok : MonoBehaviour
         }
 
         bool bSet = SetStone(i, stoneI);
-        if(bSet == false)
+        if (bSet == false)
         {
             return false;
         }
@@ -313,7 +315,7 @@ public class SamMok : MonoBehaviour
         byte[] data = new byte[1];
         int iSize = tcp.Receive(ref data, data.Length);
 
-        if(iSize <= 0)
+        if (iSize <= 0)
         {
             return false;
         }
@@ -322,7 +324,7 @@ public class SamMok : MonoBehaviour
         Debug.Log("받음: " + i);
 
         bool ret = SetStone(i, stoneYou);
-        if(ret == false)
+        if (ret == false)
         {
             return false;
         }
@@ -333,82 +335,35 @@ public class SamMok : MonoBehaviour
     {
         int size = 19; // 바둑판 크기
 
-        for (int i = 0; i < 2; i++)
-        {
-            int s;
-            if (i == 0)
-                s = (int)Stone.White;
-            else
-                s = (int)Stone.Black;
+        int[] dx = { 1, 0, 1, 1 }; // 가로, 세로, 대각선 방향(dx, dy 순서로 확인)
+        int[] dy = { 0, 1, 1, -1 };
 
+        foreach (int s in new[] { (int)Stone.White, (int)Stone.Black })
+        {
             for (int row = 0; row < size; row++)
             {
                 for (int col = 0; col < size; col++)
                 {
                     int index = row * size + col;
 
-                    // 가로방향 처리
-                    if (col + 4 < size)
+                    foreach (int dir in Enumerable.Range(0, 4))
                     {
-                        bool win = true;
+                        int cnt = 0;
                         for (int j = 0; j < 5; j++)
                         {
-                            if (board[index + j] != s)
-                            {
-                                win = false;
-                                break;
-                            }
-                        }
-                        if (win)
-                            return (Stone)s;
-                    }
+                            int nx = col + j * dx[dir];
+                            int ny = row + j * dy[dir];
 
-                    // 세로방향 처리
-                    if (row + 4 < size)
-                    {
-                        bool win = true;
-                        for (int j = 0; j < 5; j++)
-                        {
-                            if (board[index + j * size] != s)
+                            if (nx >= 0 && nx < size && ny >= 0 && ny < size && board[ny * size + nx] == s)
                             {
-                                win = false;
-                                break;
+                                cnt++;
                             }
                         }
-                        if (win)
-                            return (Stone)s;
-                    }
 
-                    // 대각선 방향 처리 (좌상에서 우하로)
-                    if (col + 4 < size && row + 4 < size)
-                    {
-                        bool win = true;
-                        for (int j = 0; j < 5; j++)
+                        if (cnt == 5)
                         {
-                            if (board[index + j * (size + 1)] != s)
-                            {
-                                win = false;
-                                break;
-                            }
-                        }
-                        if (win)
                             return (Stone)s;
-                    }
-
-                    // 대각선 방향 처리 (좌하에서 우상으로)
-                    if (col + 4 < size && row - 4 >= 0)
-                    {
-                        bool win = true;
-                        for (int j = 0; j < 5; j++)
-                        {
-                            if (board[index + j * (size - 1)] != s)
-                            {
-                                win = false;
-                                break;
-                            }
                         }
-                        if (win)
-                            return (Stone)s;
                     }
                 }
             }
@@ -469,7 +424,7 @@ public class SamMok : MonoBehaviour
             float centery = (Screen.height - 100) / 2;
 
             Texture tex = (stoneWinner == Stone.White) ? texWhite : texBlack;
-            Graphics.DrawTexture(new Rect(centerx, centery+100, 100, 100), tex);
+            Graphics.DrawTexture(new Rect(centerx, centery + 100, 100, 100), tex);
 
         }
 
