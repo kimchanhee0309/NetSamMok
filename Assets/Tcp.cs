@@ -20,6 +20,7 @@ public class Tcp : MonoBehaviour
 	bool bThread = false;
 	Thread thread = null;
 
+
 	void Start()
 	{
 		qSend = new Queue();

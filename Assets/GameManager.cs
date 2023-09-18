@@ -22,14 +22,6 @@ public class GameManager : MonoBehaviour
     }
 
     private static GameManager m_instance;
-
-    public float LimitTime = 600.0f; //10분(10*60초)
-    private float currentTime;
-    public TextMeshProUGUI timeText;
-
-
-    public bool isGameover { get; private set; }
-
     private void Awake()
     {
         if (instance != this)
@@ -38,34 +30,61 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void Start()
+    public float turnTime = 10.0f; //턴 시간(10초)
+    private bool isPlayerTurn = true; //플레이어 턴 여부
+   // private float timer; //타이머
+    public TextMeshProUGUI timerText;
+
+    public void Start()
     {
-        currentTime = LimitTime;
-        UpdateTimeText();
+        //게임 시작 시 타이머 시작
+        StartTurn();
     }
 
-
-    void Update()
+    public void Update()
     {
-        if (!isGameover)
+        //현재 플레이어의 턴이 아닌 경우에만 타이머를 감소
+        if (!isPlayerTurn)
         {
-            currentTime -= Time.deltaTime;
-
-            if (currentTime <= 0.0f)
+            turnTime -= Time.deltaTime;
+            UpdateTimerText(); //타이머 텍스트 업데이트
+            if (turnTime <= 0)
             {
-                currentTime = 0.0f;
-                isGameover = true;
-                //게임 종료 로직 추가
+                //턴이 종료되고 상대 플레이어의 턴으로 전환
+                EndTurn();
             }
-
-            UpdateTimeText();
         }
     }
 
-    private void UpdateTimeText()
+    public void StartTurn()
     {
-        int minutes = Mathf.FloorToInt(currentTime / 60);
-        int seconds = Mathf.FloorToInt(currentTime % 60);
-        timeText.text = string.Format("Time: {0:D2}:{1:D2}", minutes, seconds);
+        //턴 시작 시 타이머 초기화
+        isPlayerTurn = true;
+        UpdateTimerText(); //타이머 텍스트 업데이트
+    }
+
+    public void EndTurn()
+    {
+        //턴 종료 시 상대 플레이어의 턴으로 전환
+        isPlayerTurn = false;
+        //여기에 상대 플레이어의 동작을 추가할 수 있음
+
+        //턴 종료 후 다시 플레이어의 턴으로 전환
+        StartTurn();
+    }
+
+    //바둑돌을 둘 때 호출하는 함수
+    public void PlaceStone()
+    {
+        //바둑돌을 두면 턴을 다시 시작
+        StartTurn();
+    }
+
+    public void UpdateTimerText()
+    {
+        if(timerText!=null)
+        {
+            timerText.text = "Time: " + Mathf.Round(turnTime);
+        }
     }
 }

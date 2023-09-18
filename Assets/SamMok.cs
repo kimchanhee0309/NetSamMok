@@ -30,11 +30,16 @@ public class SamMok : MonoBehaviour
     };
 
     Tcp tcp;
-    public TMP_InputField ip;
+
+    public TMP_InputField id;
+
+
 
     public Texture texBoard;
     public Texture texWhite;
     public Texture texBlack;
+
+    public GameObject RestartBtn;
 
     private bool win = false;
     private bool lose = false;
@@ -53,6 +58,7 @@ public class SamMok : MonoBehaviour
     {
         tcp = GetComponent<Tcp>();
 
+
         state = State.Start; //게임의 상태를 Start로 설정
 
         for (int i = 0; i < board.Length; ++i)
@@ -65,15 +71,19 @@ public class SamMok : MonoBehaviour
     {
         tcp.StartServer(10000, 10);
         player[0].SetActive(true);
+
+        tcp.name = id.text;
     }
 
     public void ClientStart()
     {
-        tcp.Connect(ip.text, 10000);
+        tcp.Connect("127.0.0.1", 10000);
+        tcp.name = id.text;
     }
 
     void Update()
     {
+
         if (!tcp.IsConnect()) return; //defensive programming, 연결 안됐으면 나가라
 
         if (state == State.Start)
@@ -90,6 +100,7 @@ public class SamMok : MonoBehaviour
         {
             UpdateEnd(); //종료 상태
         }
+
     }
 
 
@@ -157,7 +168,7 @@ public class SamMok : MonoBehaviour
         }
     }
 
-    void UpdateStart() //게임 시작 초기화
+    public void UpdateStart() //게임 시작 초기화
     {
         state = State.Game;
         stoneTurn = Stone.White;
@@ -238,6 +249,24 @@ public class SamMok : MonoBehaviour
 
         SetAnimation(win);
         GetAnimation(lose);
+        RestartBtn.SetActive(true);
+        ResetGame();
+    }
+
+    public void ResetGame()
+    {
+        // Reset game variables and board
+        state = State.Start;
+        stoneTurn = Stone.White;
+        stoneWinner = Stone.None;
+
+        for (int i = 0; i < board.Length; ++i)
+        {
+            board[i] = (int)Stone.None;
+        }
+
+        // Deactivate the "Restart" button
+        RestartBtn.SetActive(false);
     }
 
     bool SetStone(int i, Stone stone) //보드의 특정 위치에 돌을 놓는 메서드, 이미 돌이 있는 경우에 놓을 수 없음
